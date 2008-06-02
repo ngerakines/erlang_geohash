@@ -1,0 +1,5 @@
+erlang_geohash -- A collection of utilities used on geohashes.
+
+* geohash.erl - This module provides basic encode/decode functionality on geohash tokens. A number of tests are provided and eunit is required.
+
+Patches are encouraged :)
