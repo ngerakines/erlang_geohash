@@ -44,7 +44,7 @@ encode(Lat, Lon) ->
     geohash:encode(Lat, Lon, Pres).
 
 encode(Lat, Lon, Pres) ->
-    geohash:encode_major(Pres, {Lat, Lon}, {{90, -90 }, {180, -180}}, 1, []).
+    geohash:encode_major(Pres, {Lat, Lon}, {{90, -90}, {180, -180}}, 1, []).
 
 encode_major(0, {_Lat, _Lon}, _Set, _Flip, Acc) -> lists:reverse(Acc);
 encode_major(X, {Lat, Lon}, Set, Flip, Acc) ->
@@ -67,7 +67,7 @@ decode(Hash) ->
     [mid(X, Set) || X <- [0, 1]].
 
 decode_interval(Hash) ->
-    decode_major(Hash, 1, {{90.0, -90.0}, {180.0, -180.0}}).
+    decode_major(Hash, 1, {{90, -90}, {180, -180}}).
 
 decode_major([], _Flip, Set) -> Set;
 decode_major([Char | Chars], Flip, Set) ->
@@ -77,7 +77,7 @@ decode_major([Char | Chars], Flip, Set) ->
 
 decode_minor(5, Set, _Bits, Flip) -> {Set, Flip};
 decode_minor(X, Set, Bits, Flip) ->
-    Mid = (geohash:mid(Flip, Set)) + 0.0,
+    Mid = geohash:mid(Flip, Set),
     BitPos = (Bits band 16 ) bsr 4,
     NewSet = geohash:shiftset(Set, Flip, BitPos, Mid),
     decode_minor(X + 1, NewSet, Bits bsl 1, geohash:flip(Flip)).
@@ -96,8 +96,8 @@ shiftset({{A, _}, {C, D}}, 0, 1, New) -> {{A, New}, {C, D}}.
 latlon(0, {X, _}) -> X;
 latlon(1, {_, X}) -> X.
 
-mid(0, {{A, B}, _}) ->(A + B) / 2;
-mid(1, {_, {A, B}}) ->(A + B) / 2.
+mid(0, {{A, B}, _}) -> (A + B) / 2;
+mid(1, {_, {A, B}}) -> (A + B) / 2.
 
 d2b(X) -> round((X * 3.32192809488736)).
 
