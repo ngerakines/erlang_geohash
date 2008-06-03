@@ -1,52 +1,43 @@
 -module(geohash).
 -compile(export_all).
 
+-author("Nick Gerakines <nick@gerakines.net>").
+-version("0.1").
+
 -include_lib("eunit/include/eunit.hrl").
 
-geohash_test_() ->
-    
-    [
-        ?_assert(geohash:encode(42.6, -5.6) == "ezs42"), %% 0.01
-        ?_assert(geohash:encode(-20, 50) == "mh7w"), %% 0.1
-        ?_assert(geohash:encode(10.1, 57.2) == "t3b9m"), %% 0.01
-        ?_assert(geohash:encode(49.26, -123.26) == "c2b25p"), %% 0.01
-        ?_assert(geohash:encode(0.005, -179.567) == "80021bgm"), %% 0.001
-        ?_assert(geohash:encode(-30.55555, 0.2) == "k484ht99h2"), %% 0.00001
-        ?_assert(geohash:encode(5.00001, -140.6) == "8buh2w4pnt") %% 0.00001
-    ].
+%% -
+%% Unit tests
 
-base26(0) -> $0;
-base26(1) -> $1;
-base26(2) -> $2;
-base26(3) -> $3;
-base26(4) -> $4;
-base26(5) -> $5;
-base26(6) -> $6;
-base26(7) -> $7;
-base26(8) -> $8;
-base26(9) -> $9;
-base26(10) -> $b;
-base26(11) -> $c;
-base26(12) -> $d;
-base26(13) -> $e;
-base26(14) -> $f;
-base26(15) -> $g;
-base26(16) -> $h;
-base26(17) -> $j;
-base26(18) -> $k;
-base26(19) -> $m;
-base26(20) -> $n;
-base26(21) -> $p;
-base26(22) -> $q;
-base26(23) -> $r;
-base26(24) -> $s;
-base26(25) -> $t;
-base26(26) -> $u;
-base26(27) -> $v;
-base26(28) -> $w;
-base26(29) -> $x;
-base26(30) -> $y;
-base26(31) -> $z.
+geohash_test_() ->
+    Tests = [
+        {42.6, -5.6, "ezs42"}, {-20, 50, "mh7w"}, {10.1, 57.2, "t3b9m"},
+        {49.26, -123.26, "c2b25p"}, {0.005, -179.567, "80021bgm"},
+        {-30.55555, 0.2, "k484ht99h2"}, {5.00001, -140.6, "8buh2w4pnt"}],
+    [begin
+        ?_assert(geohash:encode(A, B) == C)
+    % end || {A, B, C} <- Tests],
+    % [begin
+    %     ?_assert(geohash:decode(C) == [A, B])
+    end || {A, B, C} <- Tests].
+
+%% -
+%% Base32 encoding
+
+base_32() -> [
+    {0, $0}, {1, $1}, {2, $2}, {3, $3}, {4, $4}, {5, $5}, {6, $6}, {7, $7},
+    {8, $8}, {9, $9}, {10, $b}, {11, $c}, {12, $d}, {13, $e}, {14, $f},
+    {15, $g}, {16, $h}, {17, $j}, {18, $k}, {19, $m}, {20, $n}, {21, $p},
+    {22, $q}, {23, $r}, {24, $s}, {25, $t}, {26, $u}, {27, $v}, {28, $w},
+    {29, $x}, {30, $y}, {31, $z}
+].
+
+encode_base32(X) -> {value, {_, Y}} = lists:keysearch(X, 1, base_32()), Y.
+
+decode_base32(X) -> {value, {Y, _}} = lists:keysearch(X, 2, base_32()), Y.
+
+%% -
+%% encode functionality
 
 encode(Lat, Lon) ->
     Pres = geohash:precision(Lat, Lon),
@@ -60,7 +51,7 @@ encode_major(X, {Lat, Lon}, Set, Flip, Acc) ->
     {Code, NewSet, NewFlip} = geohash:encode_minor(0, {Lat, Lon}, Set, 0, Flip),
     encode_major(X - 1, {Lat, Lon}, NewSet, NewFlip, [Code | Acc]).
 
-encode_minor(5, _, Set, Bits, Flip) -> {base26(Bits), Set, Flip};
+encode_minor(5, _, Set, Bits, Flip) -> {encode_base32(Bits), Set, Flip};
 encode_minor(X, {Lat, Lon}, Set, Bits, Flip) ->
     Mid = geohash:mid(Flip, Set),
     Bit = case geohash:latlon(Flip, {Lat, Lon}) >= Mid of true -> 1; _ -> 0 end,
@@ -68,19 +59,45 @@ encode_minor(X, {Lat, Lon}, Set, Bits, Flip) ->
     NewSet = geohash:shiftset(Set, Flip, Bit, Mid),
     encode_minor(X + 1, {Lat, Lon}, NewSet, NewBits, geohash:flip(Flip)).
 
+%% -
+%% decode functionality
+
+decode(Hash) ->
+    Set = decode_interval(Hash),
+    [mid(X, Set) || X <- [0, 1]].
+
+decode_interval(Hash) ->
+    decode_major(Hash, 1, {{90.0, -90.0}, {180.0, -180.0}}).
+
+decode_major([], _Flip, Set) -> Set;
+decode_major([Char | Chars], Flip, Set) ->
+    Bits = decode_base32(Char),
+    {NewSet, NewFlip} = geohash:decode_minor(0, Set, Bits, Flip),
+    decode_major(Chars, NewFlip, NewSet).
+
+decode_minor(5, Set, _Bits, Flip) -> {Set, Flip};
+decode_minor(X, Set, Bits, Flip) ->
+    Mid = (geohash:mid(Flip, Set)) + 0.0,
+    BitPos = (Bits band 16 ) bsr 4,
+    NewSet = geohash:shiftset(Set, Flip, BitPos, Mid),
+    decode_minor(X + 1, NewSet, Bits bsl 1, geohash:flip(Flip)).
+
+%% -
+%% private methods
+
 flip(0) -> 1;
 flip(_) -> 0.
 
-shiftset({{A, B}, {_, D}}, 1, 0, New) -> {{A, B}, {New, D}};
+shiftset({{A, B}, {_, D}}, 1, BitPos, New) when BitPos == 0 -> {{A, B}, {New, D}};
 shiftset({{A, B}, {C, _}}, 1, 1, New) -> {{A, B}, {C, New}};
-shiftset({{_, B}, {C, D}}, 0, 0, New) -> {{New, B}, {C, D}};
+shiftset({{_, B}, {C, D}}, 0, BitPos, New) when BitPos == 0 -> {{New, B}, {C, D}};
 shiftset({{A, _}, {C, D}}, 0, 1, New) -> {{A, New}, {C, D}}.
 
 latlon(0, {X, _}) -> X;
 latlon(1, {_, X}) -> X.
 
-mid(0, {{A, B}, _}) -> (A + B) / 2;
-mid(1, {_, {A, B}}) -> (A + B) / 2.
+mid(0, {{A, B}, _}) ->(A + B) / 2;
+mid(1, {_, {A, B}}) ->(A + B) / 2.
 
 d2b(X) -> round((X * 3.32192809488736)).
 
@@ -95,6 +112,3 @@ precision(Lat, Lon) ->
     Lob = geohash:bit_for_number(Lon) + 9,
     Lux = case Lab > Lob of true -> Lab; _ -> Lob end,
     round(Lux / 2.5).
-
-number_to_list(X) when is_float(X) -> float_to_list(X);
-number_to_list(X) when is_integer(X) -> integer_to_list(X).
