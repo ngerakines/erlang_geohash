@@ -1,3 +1,26 @@
+%% Copyright (c) 2008 Nick Gerakines <nick@gerakines.net>
+%% 
+%% Permission is hereby granted, free of charge, to any person
+%% obtaining a copy of this software and associated documentation
+%% files (the "Software"), to deal in the Software without
+%% restriction, including without limitation the rights to use,
+%% copy, modify, merge, publish, distribute, sublicense, and/or sell
+%% copies of the Software, and to permit persons to whom the
+%% Software is furnished to do so, subject to the following
+%% conditions:
+%% 
+%% The above copyright notice and this permission notice shall be
+%% included in all copies or substantial portions of the Software.
+%% 
+%% THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+%% EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+%% OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+%% NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+%% HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+%% WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+%% FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+%% OTHER DEALINGS IN THE SOFTWARE.
+
 -module(geohash).
 -compile(export_all).
 
@@ -14,12 +37,9 @@ geohash_test_() ->
         {42.6, -5.6, "ezs42"}, {-20, 50, "mh7w"}, {10.1, 57.2, "t3b9m"},
         {49.26, -123.26, "c2b25p"}, {0.005, -179.567, "80021bgm"},
         {-30.55555, 0.2, "k484ht99h2"}, {5.00001, -140.6, "8buh2w4pnt"}],
-    [begin
-        ?_assert(geohash:encode(A, B) == C)
-    % end || {A, B, C} <- Tests],
-    % [begin
-    %     ?_assert(geohash:decode(C) == [A, B])
-    end || {A, B, C} <- Tests].
+    [?_assert(geohash:encode(A, B) == C) || {A, B, C} <- Tests],
+    % [?_assert(geohash:decode(C) == [A, B]) || {A, B, C} <- Tests],
+    ok.
 
 %% -
 %% Base32 encoding
@@ -62,12 +82,15 @@ encode_minor(X, {Lat, Lon}, Set, Bits, Flip) ->
 %% -
 %% decode functionality
 
+%% [ X / 10000000 || X<-geohash:decode("ezs42")]
+%% [ X / 10000000 || X<-geohash:decode("8buh2w4pnt")]
 decode(Hash) ->
     Set = decode_interval(Hash),
     [mid(X, Set) || X <- [0, 1]].
 
 decode_interval(Hash) ->
-    decode_major(Hash, 1, {{90, -90}, {180, -180}}).
+    M = 1,
+    decode_major(Hash, 1, {{90 * M, -90 * M}, {180 * M, -180 * M}}).
 
 decode_major([], _Flip, Set) -> Set;
 decode_major([Char | Chars], Flip, Set) ->
