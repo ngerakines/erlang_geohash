@@ -65,23 +65,72 @@ decode(Hash) when is_list(Hash) ->
     [mid(X, Set) || X <- [0, 1]].
 
 %% @private
-base_32() -> [
-    {0, $0}, {1, $1}, {2, $2}, {3, $3}, {4, $4}, {5, $5}, {6, $6}, {7, $7},
-    {8, $8}, {9, $9}, {10, $b}, {11, $c}, {12, $d}, {13, $e}, {14, $f},
-    {15, $g}, {16, $h}, {17, $j}, {18, $k}, {19, $m}, {20, $n}, {21, $p},
-    {22, $q}, {23, $r}, {24, $s}, {25, $t}, {26, $u}, {27, $v}, {28, $w},
-    {29, $x}, {30, $y}, {31, $z}
-].
+encode_base32( 0) -> $0;
+encode_base32( 1) -> $1;
+encode_base32( 2) -> $2;
+encode_base32( 3) -> $3;
+encode_base32( 4) -> $4;
+encode_base32( 5) -> $5;
+encode_base32( 6) -> $6;
+encode_base32( 7) -> $7;
+encode_base32( 8) -> $8;
+encode_base32( 9) -> $9;
+encode_base32(10) -> $b;
+encode_base32(11) -> $c;
+encode_base32(12) -> $d;
+encode_base32(13) -> $e;
+encode_base32(14) -> $f;
+encode_base32(15) -> $g;
+encode_base32(16) -> $h;
+encode_base32(17) -> $j;
+encode_base32(18) -> $k;
+encode_base32(19) -> $m;
+encode_base32(20) -> $n;
+encode_base32(21) -> $p;
+encode_base32(22) -> $q;
+encode_base32(23) -> $r;
+encode_base32(24) -> $s;
+encode_base32(25) -> $t;
+encode_base32(26) -> $u;
+encode_base32(27) -> $v;
+encode_base32(28) -> $w;
+encode_base32(29) -> $x;
+encode_base32(30) -> $y;
+encode_base32(31) -> $z.
 
 %% @private
-encode_base32(X) when is_integer(X), X > -1, X < 32 ->
-    {value, {_, Y}} = lists:keysearch(X, 1, base_32()),
-    Y.
-
-%% @private
-decode_base32(X) when is_integer(X) ->
-    {value, {Y, _}} = lists:keysearch(X, 2, base_32()),
-    Y.
+decode_base32($0) ->  0;
+decode_base32($1) ->  1;
+decode_base32($2) ->  2;
+decode_base32($3) ->  3;
+decode_base32($4) ->  4;
+decode_base32($5) ->  5;
+decode_base32($6) ->  6;
+decode_base32($7) ->  7;
+decode_base32($8) ->  8;
+decode_base32($9) ->  9;
+decode_base32($b) -> 10;
+decode_base32($c) -> 11;
+decode_base32($d) -> 12;
+decode_base32($e) -> 13;
+decode_base32($f) -> 14;
+decode_base32($g) -> 15;
+decode_base32($h) -> 16;
+decode_base32($j) -> 17;
+decode_base32($k) -> 18;
+decode_base32($m) -> 19;
+decode_base32($n) -> 20;
+decode_base32($p) -> 21;
+decode_base32($q) -> 22;
+decode_base32($r) -> 23;
+decode_base32($s) -> 24;
+decode_base32($t) -> 25;
+decode_base32($u) -> 26;
+decode_base32($v) -> 27;
+decode_base32($w) -> 28;
+decode_base32($x) -> 29;
+decode_base32($y) -> 30;
+decode_base32($z) -> 31.
 
 %% @private
 encode_major(0, {_Lat, _Lon}, _Set, _Flip, Acc) -> lists:reverse(Acc);
