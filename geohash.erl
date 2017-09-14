@@ -32,7 +32,7 @@
 %% @doc A module that provides basic geohash encoding and decoding.
 -module(geohash).
 
--export([encode/2, encode/3, decode/1]).
+-export([encode/1, encode/2, decode/1]).
 
 -author("Nick Gerakines <nick@gerakines.net>").
 -version("0.2").
@@ -51,18 +51,19 @@ geohash_test_() ->
 -endif.
 
 %% @doc Create a hash for a given latitude and longitude.
-encode(Lat, Lon) when is_number(Lat), is_number(Lon) ->
-    Pres = precision(Lat, Lon),
-    encode(Lat, Lon, Pres).
+encode(#{lat := Lat, lon := Lon} = Pos) when is_number(Lat), is_number(Lon) ->
+    Pres = precision(Pos),
+    encode(Pos, Pres).
 
 %% @doc Create a hash for a given latitude and longitude with a specific precision.
-encode(Lat, Lon, Pres) when is_number(Lat), is_number(Lon), is_number(Pres) ->
+encode(#{lat := Lat, lon := Lon}, Pres) when is_number(Lat), is_number(Lon), is_number(Pres) ->
     encode_major(Pres, {Lat, Lon}, {{90, -90}, {180, -180}}, 1, []).
 
 %% @doc Decode a geohash into a latitude and longitude.
 decode(Hash) when is_list(Hash) ->
     Set = decode_interval(Hash),
-    [mid(X, Set) || X <- [0, 1]].
+    [Lat, Lon] = [mid(X, Set) || X <- [0, 1]],
+    #{lat => Lat, lon => Lon}.
 
 %% @private
 encode_base32( 0) -> $0;
@@ -196,7 +197,7 @@ bit_for_number(N) when is_float(N) ->
 bit_for_number(_) -> 0.
 
 %% @private
-precision(Lat, Lon) ->
+precision(#{lat := Lat, lon := Lon}) ->
     Lab = bit_for_number(Lat) + 8,
     Lob = bit_for_number(Lon) + 9,
     Lux = case Lab > Lob of true -> Lab; _ -> Lob end,
