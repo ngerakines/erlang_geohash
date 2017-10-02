@@ -1,5 +1,5 @@
 %% Copyright (c) 2008 Nick Gerakines <nick@gerakines.net>
-%% 
+%%
 %% Permission is hereby granted, free of charge, to any person
 %% obtaining a copy of this software and associated documentation
 %% files (the "Software"), to deal in the Software without
@@ -8,10 +8,10 @@
 %% copies of the Software, and to permit persons to whom the
 %% Software is furnished to do so, subject to the following
 %% conditions:
-%% 
+%%
 %% The above copyright notice and this permission notice shall be
 %% included in all copies or substantial portions of the Software.
-%% 
+%%
 %% THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 %% EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 %% OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -20,19 +20,19 @@
 %% WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 %% FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 %% OTHER DEALINGS IN THE SOFTWARE.
-%% 
+%%
 %% Change Log
 %%  * 2008-10-15 ngerakines, v0.2
 %%    - Added edoc friendly documentation.
 %%    - Added a patch submitted by Sergei Matusevich.
 %%    - Misc module organization and layout changes.
-%% 
+%%
 %% @author Nick Gerakines <nick@gerakines.net> [http://blog.socklabs.com/]
 %% @copyright 2008 Nick Gerakines
 %% @doc A module that provides basic geohash encoding and decoding.
 -module(geohash).
 
--export([encode/2, encode/3, decode/1]).
+-export([encode/1, encode/2, decode/1]).
 
 -author("Nick Gerakines <nick@gerakines.net>").
 -version("0.2").
@@ -51,18 +51,19 @@ geohash_test_() ->
 -endif.
 
 %% @doc Create a hash for a given latitude and longitude.
-encode(Lat, Lon) when is_number(Lat), is_number(Lon) ->
-    Pres = precision(Lat, Lon),
-    encode(Lat, Lon, Pres).
+encode(#{lat := Lat, lon := Lon} = Pos) when is_number(Lat), is_number(Lon) ->
+    Pres = precision(Pos),
+    encode(Pos, Pres).
 
 %% @doc Create a hash for a given latitude and longitude with a specific precision.
-encode(Lat, Lon, Pres) when is_number(Lat), is_number(Lon), is_number(Pres) ->
+encode(#{lat := Lat, lon := Lon}, Pres) when is_number(Lat), is_number(Lon), is_number(Pres) ->
     encode_major(Pres, {Lat, Lon}, {{90, -90}, {180, -180}}, 1, []).
 
 %% @doc Decode a geohash into a latitude and longitude.
 decode(Hash) when is_list(Hash) ->
     Set = decode_interval(Hash),
-    [mid(X, Set) || X <- [0, 1]].
+    [Lat, Lon] = [mid(X, Set) || X <- [0, 1]],
+    #{lat => Lat, lon => Lon}.
 
 %% @private
 encode_base32( 0) -> $0;
@@ -196,7 +197,7 @@ bit_for_number(N) when is_float(N) ->
 bit_for_number(_) -> 0.
 
 %% @private
-precision(Lat, Lon) ->
+precision(#{lat := Lat, lon := Lon}) ->
     Lab = bit_for_number(Lat) + 8,
     Lob = bit_for_number(Lon) + 9,
     Lux = case Lab > Lob of true -> Lab; _ -> Lob end,
